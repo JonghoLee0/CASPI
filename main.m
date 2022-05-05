@@ -4,14 +4,9 @@ clear all;
 
 
 %% Scenes
-% LiDAR
-app = 'LiDAR'; scene = 'Art'; N_sig = 2; N_bkg = 50; t_bin = 80e-12; N_bin = 1024; N_sim = 10; s_patch = 8; r_intra = 10; r_inter = 0; FWHM = 400e-12; visual_d_min = 1.40; visual_d_max = 2.17; cmap_name = 'custom2';
+app = 'LiDAR'; scene = 'Art'; t_bin = 80e-12; N_bin = 1024; N_sim = 10; s_patch = 8; r_intra = 10; r_inter = 0; FWHM = 400e-12; d_min = 1.40; d_max = 2.17; cmap_name = 'custom2';
+% app = 'FLIM'; scene = 'autoFluorescence1'; t_bin = 48e-12; N_bin = 256; N_sim = 10; s_patch = 8; r_intra = 10; r_inter = 1; FWHM = 400e-12; t_min = 1.1e-9; t_max = 2.0e-9; cmap_name = 'custom4';
 
-
-% FLIM
-
-
-name = [scene, '_sig', num2str(N_sig), '_bkg', num2str(N_bkg)];
 
 
 
@@ -30,7 +25,6 @@ pseudo_int = 1;                             % 1:pseudo intensity, 0:true intensi
 IBF = 1;                                    % 1:yes, 0:no
 th_IBF3D = 0.8;                             % default:0.8
 th_IBF4D = 0.9;                             % default:0.9
-gt_int_stat = 0;                            % 1:mean and std are the same as ground-truth, 0:max intensity = 1
 max_int_prct = 100;                         % 100: normalize intensity with max
 
 
@@ -45,19 +39,17 @@ sigma_t = FWHM/(2*sqrt(2*log(2)));          % std for the given FWHM in time dom
 sigma_f = 1/(2*pi*sigma_t);                 % std for the given FWHM in freq domain
 bin_f = 1/(t_bin*N_bin);                    % bin size in freq domain
 N_sig_f = ceil(3*sigma_f/bin_f);            % number of signal bins in freq domain
+
+
 sigma_bin = sigma_t/t_bin;
-t_max = 10*round(sigma_bin);
-psf = normpdf([1:t_max]', t_max/2, sigma_bin);
+bin_max = 10*round(sigma_bin);
+psf = normpdf([1:bin_max]', bin_max/2, sigma_bin);
 
 
 
 %% Load data
-% ground-truth
-load([app, '\Groundtruth\', scene, '.mat'])
-
-
 % histogram
-load([app, '\Histograms\', name, '_hst.mat']);
+load([app, '\Histograms\', scene, '_hst.mat']);
 
 
 % data size
@@ -77,14 +69,7 @@ if pseudo_int
         
         % intensity
         i_map_hst = sum(hst_map, 3);
-
-        if gt_int_stat
-            i_map = i_map_set(:, :, frame);
-            i_map_hst = adjust_intensity(i_map_hst, i_map);
-            i_map_hst_RMSE = sqrt(mean((i_map_hst(:) - i_map(:)).^2));
-        else
-            i_map_hst = i_map_hst/prctile(i_map_hst(:), max_int_prct);
-        end
+        i_map_hst = i_map_hst/prctile(i_map_hst(:), max_int_prct);
 
 
         % save
@@ -117,15 +102,8 @@ for frame = 1 : N_frame
     if pseudo_int
         
         i_map_coates = sum(flux_map_noisy, 3);
+        i_map_coates = i_map_coates/prctile(i_map_coates(:), max_int_prct);
 
-        if gt_int_stat
-            i_map = i_map_set(:, :, frame);
-            i_map_coates = adjust_intensity(i_map_coates, i_map);
-            i_map_coates_RMSE = sqrt(mean((i_map_coates(:) - i_map(:)).^2));
-        else
-            i_map_coates = i_map_coates/prctile(i_map_coates(:), max_int_prct);
-        end
-        
         
         % save
         if save_interm_int
@@ -137,21 +115,6 @@ end
 
 % compute run-time
 run_time1 = toc; fprintf('%e %s\n\n', run_time1, 'sec');
-
-
-
-
-%% Matched filter
-% parameters
-load(['Color_maps/', cmap_name, '.mat']);
-method = 2;         % 1:max, 2:matched
-mask_set = ~isnan(d_map_set);
-
-d_matched_map_set = get_d_hat_map_set(flux_map_set_noisy, mask_set, psf, c, t_bin, cmap, visual_d_min, visual_d_max, method, app, 'matched');
-
-
-% Error metrics
-compute_metric_set(d_map_set, d_matched_map_set, mask_set)
 
 
 
@@ -172,10 +135,6 @@ if pseudo_int
     for frame = 1 : N_frame
         
         fprintf('frame %d: ', frame);
-        
-
-        % ground-truth for error metric
-        i_map = i_map_set(:, :, frame);
 
 
         % pseudo intensity from 1D frequency filtering
@@ -183,14 +142,8 @@ if pseudo_int
         flux_map_1D = ifft(FLUX_map_noisy1D(:, :, 1:N_sig_f), N_bin, 3, 'symmetric');
         flux_map_1D(flux_map_1D < 0) = 0;
         i_map_1D = sum(flux_map_1D, 3);
+        i_map_1D = i_map_1D/prctile(i_map_1D(:), max_int_prct);
         
-        if gt_int_stat
-            i_map_1D = adjust_intensity(i_map_1D, i_map);
-            i_map1D_RMSE = sqrt(mean((i_map_1D(:) - i_map(:)).^2));
-        else
-            i_map_1D = i_map_1D/prctile(i_map_1D(:), max_int_prct);
-        end
-
         if save_interm_int
             imwrite(i_map_1D, [app, '\Results\3_i_1D_', num2str(frame) , '.png']);
         end
@@ -201,17 +154,11 @@ if pseudo_int
         [flux_map_ht3D, MSE_map, IBFmask3D] = hard_threshold_3D(FLUX_map_noisy1D, i_map_1D, IBF, th_IBF3D, size_y, size_x, N_bin, s_patch, N_sig_f, skp, octave);
         
         
-         % pseudo intensity from 3D HT
+        % pseudo intensity from 3D HT
         i_map_ht3D = sum(flux_map_ht3D, 3);
+        i_map_ht3D = i_map_ht3D/prctile(i_map_ht3D(:), max_int_prct);
         
-        if gt_int_stat
-            i_map_ht3D = adjust_intensity(i_map_ht3D, i_map);
-            i_map_3DHT_RMSE = sqrt(mean((i_map_ht3D(:) - i_map(:)).^2));
-        else
-            i_map_ht3D = i_map_ht3D/prctile(i_map_ht3D(:), max_int_prct);
-        end
 
-        
         % save
         if save_interm_int
             imwrite(i_map_ht3D, [app, '\Results\4_i_ht3D_', num2str(frame) , '.png']);
@@ -226,14 +173,7 @@ if pseudo_int
 
         % pseudo intensity from 3D Wiener
         i_map_wiener3D = sum(flux_map_wiener3D, 3);
-        
-        if gt_int_stat
-            i_map_wiener3D = adjust_intensity(i_map_wiener3D, i_map);
-            i_map_3DWiener_RMSE = sqrt(mean((i_map_wiener3D(:) - i_map(:)).^2));
-        else
-            i_map_wiener3D = i_map_wiener3D/prctile(i_map_wiener3D(:), max_int_prct);
-        end
-
+        i_map_wiener3D = i_map_wiener3D/prctile(i_map_wiener3D(:), max_int_prct);
         i_map_set_wiener3D(:, :, frame) = i_map_wiener3D;
         
         
@@ -291,15 +231,8 @@ if pseudo_int
 
         % pseudo intensity map from 4D HT
         i_map_ht4D = sum(flux_map_ht4D, 3);
+        i_map_ht4D = i_map_ht4D/prctile(i_map_ht4D(:), max_int_prct);
 
-        if gt_int_stat
-            i_map = i_map_set(:, :, frame);
-            i_map_ht4D = adjust_intensity(i_map_ht4D, i_map);
-            i_map_ht4D_RMSE = sqrt(mean((i_map_ht4D(:) - i_map(:)).^2));
-        else
-            i_map_ht4D = i_map_ht4D/prctile(i_map_ht4D(:), max_int_prct);
-        end
-    
         if save_interm_int
             imwrite(i_map_ht4D, [app, '\Results\6_i_ht4D_', num2str(frame) , '.png']);
         end
@@ -332,14 +265,7 @@ if pseudo_int
 
         % pseudo intensity map from 4D HT
         i_map_wiener4D = sum(flux_map_wiener4D, 3);
-
-        if gt_int_stat
-            i_map = i_map_set(:, :, frame);
-            i_map_wiener4D = adjust_intensity(i_map_wiener4D, i_map);
-            i_map_wiener4D_RMSE = sqrt(mean((i_map_wiener4D(:) - i_map(:)).^2));
-        else
-            i_map_wiener4D = i_map_wiener4D/prctile(i_map_wiener4D(:), max_int_prct);
-        end
+        i_map_wiener4D = i_map_wiener4D/prctile(i_map_wiener4D(:), max_int_prct);
 
         if save_interm_int
             imwrite(i_map_wiener4D, [app, '\Results\7_i_wiener4D_', num2str(frame) , '.png']);
@@ -363,17 +289,84 @@ save([app, '\Results\flux_hat.mat'], 'flux_map_set_wiener4D');
 
 
 
-%% Depth maps
-% parameters
-method = 2;         % 1:max, 2:matched
-mask_set = ~isnan(d_map_set);
+%% LiDAR results
+if strcmp(app, 'LiDAR')
+    
+    
+    % load ground-truth for error computation
+    load([app, '\Groundtruth\', scene, '.mat'])
+    load(['Color_maps/', cmap_name, '.mat']);
+
+    
+    % Conventional: matched filtering (MF)
+    fprintf('Matched filtering:\n')
+    method = 2;         % 1:max, 2:matched
+    mask_set = ~isnan(d_map_set);
+    d_matched_map_set = get_d_hat_map_set(flux_map_set_noisy, mask_set, psf, c, t_bin, cmap, d_min, d_max, method, app, 'matched');
+    compute_metric_set(d_map_set, d_matched_map_set, mask_set)
+    
+      
+    % CASPI + MF
+    fprintf('CASPI + Matched filtering:\n')
+    method = 2;         % 1:max, 2:matched
+    mask_set = ~isnan(d_map_set);
+    flux_map_set = flux_map_set_wiener4D;
+    d_hat_map_set = get_d_hat_map_set(flux_map_set, mask_set, psf, c, t_bin, cmap, d_min, d_max, method, app, 'wiener4d');
+    compute_metric_set(d_map_set, d_hat_map_set, mask_set)
+
+end
 
 
-% get depth maps
-flux_map_set = flux_map_set_wiener4D;
-d_hat_map_set = get_d_hat_map_set(flux_map_set, mask_set, psf, c, t_bin, cmap, visual_d_min, visual_d_max, method, app, 'wiener4d');
 
+%% FLIM results
+if strcmp(app, 'FLIM')
+    
+    max_int_prct = 95;
+    int_exp = 1.7;
+    mask_th = 0.0;
+    N_sample = 35;
 
+    load(['Color_maps/', cmap_name, '.mat']);
+    cmap = flipud(cmap);
+    
+    for frame = 1 : N_frame
+        
+        
+        % Conventional: linear fitting to log-transformed data
+        hst_map = hst_map_set(:, :, :, frame);
+        i_map = sum(hst_map, 3);
+        i_map = i_map/prctile(i_map(:), max_int_prct);
+        i_map_cnv = i_map.^int_exp;
+        mask_cnv = i_map_cnv > mask_th;
+        
+        
+        % linear fitting after spatial binning
+        [t_map, t_map_color, ti_map_color] = make_t_map(hst_map, i_map_cnv, mask_cnv, N_sample, t_bin, cmap, t_min, t_max, 3);
+        t_map(t_map < t_min) = t_min;
+        t_map(t_map > t_max) = t_max;
+        
+        t_map(~mask_cnv) = nan;
+        t_map(t_map == 0) = nan;
+        
+        imwrite(ti_map_color, ['FLIM\Results\binning_linearfit_', num2str(frame), '.png'])
+        
+        
+        
+        % CASPI
+        flux_map = flux_map_set_wiener4D(:, :, :, frame);
+        i_map = sum(flux_map, 3);
+        i_map = i_map/prctile(i_map(:), max_int_prct);
+        i_map_csp = i_map.^int_exp;
+        mask_csp = i_map_csp > mask_th;
+        
+        [t_map, t_map_color, ti_map_color] = make_t_map(flux_map, i_map_csp, mask_csp, N_sample, t_bin, cmap, t_min, t_max, 0);
+        t_map(t_map < t_min) = t_min;
+        t_map(t_map > t_max) = t_max;
+        
+        t_map(~mask_csp) = nan;
+        t_map(t_map == 0) = nan;
 
-%% Error metrics
-compute_metric_set(d_map_set, d_hat_map_set, mask_set)
+        imwrite(ti_map_color, ['FLIM\Results\caspi_linearfit', num2str(frame), '.png'])
+        
+    end
+end
