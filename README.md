@@ -13,15 +13,23 @@ Nature Communications 2023
 ## Requirements
 * The code has been tested with MATLAB R2020b on a PC with 64-bit Windows 10.
 
+
 ## Demos
 * Run `main.m`
 
+
 ## Input
-### Photon transient cubes
+### Noisy and distorted photon transient cubes
 * One dataset for LiDAR applicaiton and another dataset for FLIM application are provided in the folders `Data\LiDAR` and `Data\FLIM`, respectively.
 
 ### Laser source priors
-* FWHM values are provided in the code assuming the Gaussian laser pulses.
+* FWHM values of the Gaussian laser pulses are provided in the code for the provided datasets.
+* For the non-Gaussian laser pulses, provide the number of frequency bins of the laser pulse for the parameter `N_sig_f` manually.
+
+### Intensity images (optional)
+* An example intensity image is provided for the LiDAR dataset.
+
 
 ## Output
-* Recovered photon fluxes are saved in the folder `Data\LiDAR` or `Data\FLIM` according to the application. Depth maps or lifetime images are also saved in the same folder.
+* Recovered photon transient cubes are saved in the folder `Data\LiDAR` or `Data\FLIM` according to the application.
+* Depth maps or lifetime images are also saved in the same folder accordingly.
