@@ -5,7 +5,7 @@ CASPI: Collaborative Photon Processing for Active Single-Photon Imaging \
 Jongho Lee, Atul Ingle, JV Chacko, KW Eliceiri, Mohit Gupta \
 Nature Communications 2023
 
-![alt text](image.jpg)
+<img src="https://github.com/JonghoLee0/CASPI/blob/main/teaser.png>
 
 
 ## Requirement
