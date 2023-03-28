@@ -37,4 +37,4 @@ Nature Communications 2023
 
 ## Output
 * Recovered photon transient cubes are saved in the folder `Data\LiDAR` or `Data\FLIM` according to the application.
-* Depth maps or lifetime images are saved in the same folder.
+* Depth maps (+ intensity images) or lifetime images are saved in the same folder.
