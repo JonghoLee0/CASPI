@@ -32,7 +32,7 @@ Nature Communications 2023
 
 
 ### Intensity images (optional)
-* An intensity image (`i_map_set`) for the LiDAR dataset is provided.
+* Intensity images (`i_map_set`) for the LiDAR dataset is provided.
 
 
 ## Output
