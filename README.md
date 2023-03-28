@@ -6,8 +6,11 @@ Jongho Lee, Atul Ingle, JV Chacko, KW Eliceiri, Mohit Gupta \
 Nature Communications 2023
 
 \
+\
 <img src="https://github.com/JonghoLee0/CASPI/blob/main/teaser.png" width="800">
-
+<br />
+<br />
+<br />
 
 
 ## Requirements
@@ -19,17 +22,19 @@ Nature Communications 2023
 
 
 ## Input
-### Noisy and distorted photon transient cubes
-* One dataset for LiDAR applicaiton and another dataset for FLIM application are provided in the folders `Data\LiDAR` and `Data\FLIM`, respectively.
+### Noisy and distorted raw photon transient cubes
+* Example datasets for LiDAR applicaiton and FLIM application are provided in the folders `Data\LiDAR` and `Data\FLIM`, respectively.
+
 
 ### Laser source priors
 * FWHM values of the Gaussian laser pulses are provided in the code for the provided datasets.
-* For the non-Gaussian laser pulses, provide the number of frequency bins of the laser pulse for the parameter `N_sig_f` manually.
+* For the datasets using non-Gaussian laser pulses, provide the number of frequency bins of the laser pulse for the parameter `N_sig_f` manually.
+
 
 ### Intensity images (optional)
-* An example intensity image is provided for the LiDAR dataset.
+* An intensity image (`i_map_set`) for the LiDAR dataset is provided.
 
 
 ## Output
 * Recovered photon transient cubes are saved in the folder `Data\LiDAR` or `Data\FLIM` according to the application.
-* Depth maps or lifetime images are also saved in the same folder accordingly.
+* Depth maps or lifetime images are saved in the same folder.
