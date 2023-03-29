@@ -9,18 +9,18 @@ clear all;
 
 
 %% Scenes
-% application = 'LiDAR';                      % CASPI application
-% scene = 'art';                              % scene name
-% delta_t = 80e-12;                           % time bin size (s)
-% R_inter = 0;                                % search size over cubes; S_inter = 2*R_inter + 1
-% FWHM = 400e-12;                             % full-width at half-maximum of Gaussian laser pulse (s)
-
-
-application = 'FLIM';                       % CASPI application
-scene = 'autoFluorescence1';                % scene name
-delta_t = 48e-12;                           % time bin size (s)
-R_inter = 1;                                % search size over cubes; S_inter = 2*R_inter + 1
+application = 'LiDAR';                      % CASPI application
+scene = 'art';                              % scene name
+delta_t = 80e-12;                           % time bin size (s)
+R_inter = 0;                                % search size over cubes; S_inter = 2*R_inter + 1
 FWHM = 400e-12;                             % full-width at half-maximum of Gaussian laser pulse (s)
+
+
+% application = 'FLIM';                       % CASPI application
+% scene = 'autoFluorescence1';                % scene name
+% delta_t = 48e-12;                           % time bin size (s)
+% R_inter = 1;                                % search size over cubes; S_inter = 2*R_inter + 1
+% FWHM = 400e-12;                             % full-width at half-maximum of Gaussian laser pulse (s)
 
 
 
